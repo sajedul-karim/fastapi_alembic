@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from database import get_db, engine
 import models
 from schemas import PostCreate, PostResponse, UserCreate, UserResponse
-from services import create_post, get_post, get_posts, get_user, get_users, create_user
+from services import create_post, get_post, get_posts, get_user, get_users, create_user, delete_user, update_post
 
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
@@ -49,21 +49,24 @@ async def read_user(user_id: int, db: db_dependency):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
+
 @app.delete("/user/{user_id}")
-async def delete_user(user_id: int, db: db_dependency):
+async def delete_user_mine(user_id: int, db: db_dependency):
     delete_user(db, user_id)
     return {"message": "User deleted successfully"}
+
 
 @app.post("/post", response_model=PostResponse)
 async def create_new_post(post: PostCreate, db: db_dependency):
     try:
-        post = create_post(db=db, post=post)
-        return post
-    
+        db_post = await create_post(db=db, post=post)
+        return db_post
+
     except IntegrityError as e:
         raise HTTPException(status_code=500, detail=f"Intrigity error occurred: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"an error occurred: {str(e)}")
+
 
 @app.get("/posts", response_model=list[PostResponse])
 async def read_posts(db: db_dependency, skip: int = 0, limit: int = 100):
@@ -71,6 +74,7 @@ async def read_posts(db: db_dependency, skip: int = 0, limit: int = 100):
     if not posts:
         raise HTTPException(status_code=404, detail="No posts found")
     return posts
+
 
 @app.get("/post/{post_id}", response_model=PostResponse)
 async def read_post(post_id: int, db: db_dependency):
