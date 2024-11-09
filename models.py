@@ -1,5 +1,6 @@
+from typing import List
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from datetime import datetime
 from database import Base
 
@@ -12,7 +13,11 @@ class User(Base):
     email = Column(String(50), unique=True, index=True)
     password = Column(String(255))
 
-    posts = relationship("Post", back_populates="user")
+    posts: Mapped[List["Post"]] = relationship(
+        "Post", 
+        back_populates="user",
+        uselist=True
+    )
 
 
 class Post(Base):
@@ -25,4 +30,8 @@ class Post(Base):
     created_at = Column(DateTime, default=datetime.now)
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    user = relationship("User", back_populates="posts")
+    user: Mapped["User"] = relationship(
+        "User", 
+        back_populates="posts",
+        uselist=False
+    )
